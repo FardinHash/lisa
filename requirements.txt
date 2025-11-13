@@ -1,0 +1,23 @@
+# production
+fastapi
+uvicorn[standard]
+
+# core
+pydantic
+pydantic-settings
+python-dotenv
+openai
+langchain
+langchain-openai
+langchain-community
+langgraph
+chromadb
+sqlalchemy
+rich
+httpx
+tiktoken
+
+# testing
+pytest
+black
+isort
