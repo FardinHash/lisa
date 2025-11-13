@@ -1,5 +1,6 @@
 import logging
 import os
+import warnings
 from typing import Any, Dict, List, Optional
 
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
@@ -8,6 +9,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import settings
 from app.services.llm import llm_service
+
+warnings.filterwarnings("ignore", message=".*Relevance scores must be between.*")
 
 logger = logging.getLogger(__name__)
 
