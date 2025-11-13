@@ -3,6 +3,8 @@ from datetime import datetime
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from scalar_fastapi import get_scalar_api_reference
+from scalar_fastapi.scalar_fastapi import Theme
 
 from app.api.chat import router as chat_router
 from app.config import settings
@@ -19,8 +21,9 @@ app = FastAPI(
     title="Life Insurance Support Assistant API",
     description="AI-powered assistant for life insurance queries using LangGraph and RAG",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url="/openapi.json",
 )
 
 app.add_middleware(
@@ -43,14 +46,23 @@ async def root():
         "health": "/health",
     }
 
+# API documentation
+@app.get("/docs", include_in_schema=False)
+async def scalar_html():
+    return get_scalar_api_reference(
+        openapi_url=app.openapi_url,
+        title=app.title,
+        theme=Theme.BLUE_PLANET,
+    )
 
+# Health check
 @app.get("/health", response_model=HealthResponse, tags=["health"])
 async def health_check():
     return HealthResponse(
         status="healthy", environment=settings.environment, timestamp=datetime.utcnow()
     )
 
-
+# Startup event
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting Life Insurance Support Assistant API")
@@ -58,11 +70,13 @@ async def startup_event():
     logger.info(f"LLM Model: {settings.llm_model}")
 
 
+# Shutdown event
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Shutting down Life Insurance Support Assistant API")
 
 
+# Main entry point
 if __name__ == "__main__":
     import uvicorn
 
