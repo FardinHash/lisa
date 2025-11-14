@@ -29,5 +29,30 @@ class Settings(BaseSettings):
     api_port: int = 8000
     api_reload: bool = True
 
+    rag_chunk_size: int = 1000
+    rag_chunk_overlap: int = 200
+    rag_search_k: int = 4
+    rag_score_threshold: float = 0.5
+    rag_file_encoding: str = "utf-8"
+    rag_file_glob: str = "**/*.txt"
+
+    memory_max_history: int = 10
+    memory_context_messages: int = 6
+
+    agent_search_k: int = 3
+    agent_comparison_k: int = 6
+
+    premium_base_rate: float = 0.05
+    premium_smoker_multiplier: float = 2.5
+
+    eligibility_min_age: int = 18
+    eligibility_max_term_age: int = 75
+    eligibility_senior_age: int = 65
+    eligibility_high_coverage: int = 1000000
+
+    tool_default_age: int = 35
+    tool_default_coverage: int = 500000
+    tool_default_term: int = 20
+
 
 settings = Settings()

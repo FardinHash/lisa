@@ -47,10 +47,10 @@ class LifeInsuranceCLI:
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
         """
-        
+
         self.console.print(f"[bold cyan]{banner}[/bold cyan]", justify="center")
         self.console.print()
-        
+
         capabilities_left = Panel(
             "[bold]What I Can Help With:[/bold]\n\n"
             "• Policy Types & Comparison\n"
@@ -58,9 +58,9 @@ class LifeInsuranceCLI:
             "• Premium Calculations",
             border_style="cyan",
             box=box.ROUNDED,
-            padding=(1, 2)
+            padding=(1, 2),
         )
-        
+
         capabilities_right = Panel(
             "[bold]Features:[/bold]\n\n"
             "• Claims Process Guide\n"
@@ -68,12 +68,14 @@ class LifeInsuranceCLI:
             "• Expert Q&A Support",
             border_style="cyan",
             box=box.ROUNDED,
-            padding=(1, 2)
+            padding=(1, 2),
         )
-        
-        self.console.print(Columns([capabilities_left, capabilities_right]) , justify="center")
+
+        self.console.print(
+            Columns([capabilities_left, capabilities_right]), justify="center"
+        )
         self.console.print()
-        
+
         examples = Panel(
             "[bold yellow]Try asking:[/bold yellow]\n"
             '[dim]"What types of life insurance are available?"[/dim]\n'
@@ -81,29 +83,29 @@ class LifeInsuranceCLI:
             '[dim]"Can I get insurance if I have diabetes?"[/dim]',
             border_style="yellow",
             box=box.SIMPLE,
-            padding=(0, 2)
+            padding=(0, 2),
         )
-        
+
         self.console.print(examples)
         self.console.print()
 
     def display_help(self):
         table = Table(
-            title="[bold cyan]Available Commands[/bold cyan]", 
-            box=box.ROUNDED, 
+            title="[bold cyan]Available Commands[/bold cyan]",
+            box=box.ROUNDED,
             border_style="cyan",
             show_header=True,
-            header_style="bold magenta"
+            header_style="bold magenta",
         )
         table.add_column("Command", style="cyan bold", no_wrap=True, width=20)
         table.add_column("Description", style="white")
-        
+
         table.add_row("/help", "Show this help message")
         table.add_row("/clear", "Clear conversation history and start fresh")
         table.add_row("/history", "Show full conversation history")
         table.add_row("/new", "Start a new session")
         table.add_row("/quit or /exit", "Exit the application")
-        
+
         self.console.print()
         self.console.print(table)
         self.console.print()
@@ -120,7 +122,11 @@ class LifeInsuranceCLI:
             return
 
         self.console.print()
-        self.console.print(Rule(f"[bold cyan]Conversation History ({len(messages)} messages)[/bold cyan]"))
+        self.console.print(
+            Rule(
+                f"[bold cyan]Conversation History ({len(messages)} messages)[/bold cyan]"
+            )
+        )
         self.console.print()
 
         for idx, msg in enumerate(messages, 1):
@@ -134,7 +140,7 @@ class LifeInsuranceCLI:
                         title=f"[bold blue] You[/bold blue] [dim]#{idx}[/dim]",
                         border_style="blue",
                         box=box.ROUNDED,
-                        padding=(0, 1)
+                        padding=(0, 1),
                     )
                 )
             else:
@@ -144,7 +150,7 @@ class LifeInsuranceCLI:
                         title=f"[bold green] Assistant[/bold green] [dim]#{idx}[/dim]",
                         border_style="green",
                         box=box.ROUNDED,
-                        padding=(0, 1)
+                        padding=(0, 1),
                     )
                 )
 
@@ -167,7 +173,7 @@ class LifeInsuranceCLI:
                 title="[bold green] Assistant[/bold green]",
                 border_style="green",
                 box=box.ROUNDED,
-                padding=(1, 2)
+                padding=(1, 2),
             )
         )
 
@@ -221,7 +227,7 @@ class LifeInsuranceCLI:
                     "👋 Goodbye![/bold cyan]"
                 ),
                 border_style="cyan",
-                box=box.DOUBLE
+                box=box.DOUBLE,
             )
             self.console.print(goodbye_panel)
             self.console.print()
@@ -257,7 +263,7 @@ class LifeInsuranceCLI:
             "Ask any question about life insurance  |  "
             "[bold]/quit[/bold] to exit[/dim]",
             border_style="dim",
-            box=box.SIMPLE
+            box=box.SIMPLE,
         )
         self.console.print(info_panel)
         self.console.print()
@@ -278,8 +284,7 @@ class LifeInsuranceCLI:
                     continue
 
                 with self.console.status(
-                    "[bold green] Thinking...[/bold green]", 
-                    spinner="dots12"
+                    "[bold green] Thinking...[/bold green]", spinner="dots12"
                 ):
                     start_time = time.time()
                     response = agent.process_message(
@@ -306,7 +311,9 @@ class LifeInsuranceCLI:
                 )
 
             except KeyboardInterrupt:
-                self.console.print("\n[yellow]⚠ Interrupted. Type /quit to exit properly.[/yellow]\n")
+                self.console.print(
+                    "\n[yellow]⚠ Interrupted. Type /quit to exit properly.[/yellow]\n"
+                )
                 continue
 
             except Exception as e:
@@ -315,7 +322,7 @@ class LifeInsuranceCLI:
                     f"[bold red]Error:[/bold red] {str(e)}\n\n"
                     "[dim]Please try again or contact support if the issue persists.[/dim]",
                     title="[bold red] Error[/bold red]",
-                    border_style="red"
+                    border_style="red",
                 )
                 self.console.print(error_panel)
                 self.console.print()

@@ -10,6 +10,7 @@ from app.agents.prompts import (ANSWER_GENERATION_PROMPT, CLARIFICATION_PROMPT,
                                 INTENT_CLASSIFIER_PROMPT, SYSTEM_PROMPT)
 from app.agents.tools import (calculate_premium_estimate, check_eligibility,
                               get_policy_comparison, search_knowledge_base)
+from app.config import settings
 from app.services.llm import llm_service
 from app.services.memory import memory_service
 
@@ -108,7 +109,7 @@ class LifeInsuranceAgent:
 
             all_context = []
             for query in search_queries[:2]:
-                result = search_knowledge_base(query, k=3)
+                result = search_knowledge_base(query, k=settings.agent_search_k)
                 if result["success"]:
                     all_context.append(result["context"])
 
@@ -191,11 +192,15 @@ class LifeInsuranceAgent:
 
         try:
             if "calculate" in question or "estimate" in question or "cost" in question:
-                age = self._extract_number(question, context="age", default=35)
-                coverage = self._extract_number(
-                    question, context="coverage", default=500000
+                age = self._extract_number(
+                    question, context="age", default=settings.tool_default_age
                 )
-                term = self._extract_number(question, context="term", default=20)
+                coverage = self._extract_number(
+                    question, context="coverage", default=settings.tool_default_coverage
+                )
+                term = self._extract_number(
+                    question, context="term", default=settings.tool_default_term
+                )
                 is_smoker = "smok" in question
 
                 result = calculate_premium_estimate(
@@ -208,7 +213,9 @@ class LifeInsuranceAgent:
                 logger.info("Premium calculation completed")
 
             if "eligible" in question or "qualify" in question:
-                age = self._extract_number(question, context="age", default=35)
+                age = self._extract_number(
+                    question, context="age", default=settings.tool_default_age
+                )
                 smoker = "smok" in question
 
                 health_conditions = []
@@ -286,9 +293,7 @@ class LifeInsuranceAgent:
         try:
             conversation_history = ""
             if session_id:
-                conversation_history = memory_service.get_recent_context(
-                    session_id, num_messages=6
-                )
+                conversation_history = memory_service.get_recent_context(session_id)
 
             tool_context = ""
             if tool_results:

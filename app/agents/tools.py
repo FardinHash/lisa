@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Dict, Optional
 
+from app.config import settings
 from app.services.rag import rag_service
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ def calculate_premium_estimate(
         Dictionary with premium estimate and breakdown
     """
     try:
-        base_rate_per_1000 = 0.05
+        base_rate_per_1000 = settings.premium_base_rate
 
         age_multiplier = 1.0
         if age < 30:
@@ -96,7 +97,7 @@ def calculate_premium_estimate(
             "substandard": 1.5,
         }.get(health_rating.lower(), 1.0)
 
-        smoker_multiplier = 2.5 if is_smoker else 1.0
+        smoker_multiplier = settings.premium_smoker_multiplier if is_smoker else 1.0
 
         coverage_units = coverage_amount / 1000
 
@@ -137,7 +138,7 @@ def check_eligibility(
     health_conditions: list = None,
     smoker: bool = False,
     occupation: str = "standard",
-    coverage_amount: int = 500000,
+    coverage_amount: int = None,
 ) -> Dict[str, Any]:
     """
     Check basic eligibility for life insurance.
@@ -154,18 +155,24 @@ def check_eligibility(
     """
     try:
         health_conditions = health_conditions or []
+        coverage_amount = coverage_amount or settings.tool_default_coverage
 
         issues = []
         recommendations = []
 
-        if age < 18:
-            issues.append("Must be at least 18 years old for individual coverage")
-        elif age > 75:
+        if age < settings.eligibility_min_age:
+            issues.append(
+                f"Must be at least {settings.eligibility_min_age} years old for individual coverage"
+            )
+        elif age > settings.eligibility_max_term_age:
             issues.append(
                 "Age may limit term life options; consider guaranteed issue or final expense"
             )
 
-        if age > 65 and coverage_amount > 1000000:
+        if (
+            age > settings.eligibility_senior_age
+            and coverage_amount > settings.eligibility_high_coverage
+        ):
             issues.append(
                 "High coverage amounts may require extensive underwriting at this age"
             )
@@ -222,7 +229,10 @@ def check_eligibility(
                 "High-risk occupation may require specialized policy or occupational exclusions"
             )
 
-        if 18 <= age <= 75 and not has_high_risk:
+        if (
+            settings.eligibility_min_age <= age <= settings.eligibility_max_term_age
+            and not has_high_risk
+        ):
             eligibility = "Good" if not has_moderate_risk else "Moderate"
             likely_approved = True
         else:
@@ -260,7 +270,7 @@ def get_policy_comparison(policy_types: list) -> Dict[str, Any]:
     """
     try:
         query = f"Compare {', '.join(policy_types)} life insurance policies including features, benefits, and costs"
-        results = search_knowledge_base(query, k=6)
+        results = search_knowledge_base(query, k=settings.agent_comparison_k)
 
         return {
             "success": True,

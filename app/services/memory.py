@@ -4,14 +4,16 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 
 class ConversationMemory:
-    def __init__(self, max_history: int = 10):
+    def __init__(self, max_history: int = None):
         self.sessions: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
         self.session_metadata: Dict[str, Dict[str, Any]] = {}
-        self.max_history = max_history
+        self.max_history = max_history or settings.memory_max_history
 
     def create_session(self, user_id: Optional[str] = None) -> str:
         session_id = str(uuid.uuid4())
@@ -107,7 +109,8 @@ class ConversationMemory:
     def get_all_sessions(self) -> List[str]:
         return list(self.sessions.keys())
 
-    def get_recent_context(self, session_id: str, num_messages: int = 6) -> str:
+    def get_recent_context(self, session_id: str, num_messages: int = None) -> str:
+        num_messages = num_messages or settings.memory_context_messages
         messages = self.get_messages(session_id, limit=num_messages)
 
         if not messages:

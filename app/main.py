@@ -46,6 +46,7 @@ async def root():
         "health": "/health",
     }
 
+
 # API documentation
 @app.get("/docs", include_in_schema=False)
 async def scalar_html():
@@ -55,12 +56,14 @@ async def scalar_html():
         theme=Theme.BLUE_PLANET,
     )
 
+
 # Health check
 @app.get("/health", response_model=HealthResponse, tags=["health"])
 async def health_check():
     return HealthResponse(
         status="healthy", environment=settings.environment, timestamp=datetime.utcnow()
     )
+
 
 # Startup event
 @app.on_event("startup")

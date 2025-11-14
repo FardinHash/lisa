@@ -3,8 +3,8 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional
 
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_chroma import Chroma
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import settings
@@ -43,17 +43,17 @@ class RAGService:
 
             loader = DirectoryLoader(
                 settings.knowledge_base_dir,
-                glob="**/*.txt",
+                glob=settings.rag_file_glob,
                 loader_cls=TextLoader,
-                loader_kwargs={"encoding": "utf-8"},
+                loader_kwargs={"encoding": settings.rag_file_encoding},
             )
 
             documents = loader.load()
             logger.info(f"Loaded {len(documents)} documents")
 
             text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=200,
+                chunk_size=settings.rag_chunk_size,
+                chunk_overlap=settings.rag_chunk_overlap,
                 length_function=len,
                 separators=["\n\n", "\n", ". ", " ", ""],
             )
@@ -75,8 +75,10 @@ class RAGService:
             raise
 
     def search(
-        self, query: str, k: int = 4, score_threshold: float = 0.5
+        self, query: str, k: int = None, score_threshold: float = None
     ) -> List[Dict[str, Any]]:
+        k = k or settings.rag_search_k
+        score_threshold = score_threshold or settings.rag_score_threshold
         if not self.vectorstore:
             logger.error("Vector store not initialized")
             return []
@@ -105,8 +107,9 @@ class RAGService:
             return []
 
     def search_with_metadata_filter(
-        self, query: str, metadata_filter: Dict[str, Any], k: int = 4
+        self, query: str, metadata_filter: Dict[str, Any], k: int = None
     ) -> List[Dict[str, Any]]:
+        k = k or settings.rag_search_k
         if not self.vectorstore:
             logger.error("Vector store not initialized")
             return []
@@ -131,7 +134,8 @@ class RAGService:
             logger.error(f"Error searching with metadata filter: {str(e)}")
             return []
 
-    def get_relevant_context(self, query: str, k: int = 4) -> str:
+    def get_relevant_context(self, query: str, k: int = None) -> str:
+        k = k or settings.rag_search_k
         results = self.search(query, k=k)
 
         if not results:
