@@ -3,6 +3,9 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
+from openai import APIError, RateLimitError
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_exponential)
 
 from app.config import settings
 
@@ -18,6 +21,12 @@ class LLMService:
             api_key=settings.openai_api_key,
         )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type((RateLimitError, APIError)),
+        reraise=True,
+    )
     def invoke(
         self, messages: List[Dict[str, str]], temperature: Optional[float] = None
     ) -> str:
@@ -32,6 +41,9 @@ class LLMService:
             response = llm.invoke(langchain_messages)
             return response.content
 
+        except (RateLimitError, APIError) as e:
+            logger.warning(f"Retryable error invoking LLM: {str(e)}")
+            raise
         except Exception as e:
             logger.error(f"Error invoking LLM: {str(e)}")
             raise

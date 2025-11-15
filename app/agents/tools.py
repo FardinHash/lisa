@@ -58,7 +58,7 @@ def calculate_premium_estimate(
     try:
         criteria_query = f"premium rating factors for age {age}, term {term_length} years, health rating {health_rating}, smoker status {is_smoker}"
         criteria_result = search_knowledge_base(criteria_query, k=3)
-        
+
         prompt = f"""Based on the following life insurance rating criteria, calculate an estimated premium.
 
 Premium Rating Criteria:
@@ -83,13 +83,14 @@ Provide the calculation in this JSON format:
 }}"""
 
         response = llm_service.invoke([{"role": "user", "content": prompt}])
-        
+
         import json
         import re
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+
+        json_match = re.search(r"\{.*\}", response, re.DOTALL)
         if json_match:
             calculation = json.loads(json_match.group())
-            
+
             return {
                 "success": True,
                 "monthly_premium": round(calculation.get("monthly_premium", 0), 2),
@@ -105,10 +106,12 @@ Provide the calculation in this JSON format:
                 "explanation": calculation.get("explanation", ""),
                 "note": "This is an estimate based on industry standards. Actual premiums may vary.",
             }
-        
+
         base_rate_per_1000 = settings.premium_base_rate
-        monthly_premium = (coverage_amount / 1000) * base_rate_per_1000 * (2.5 if is_smoker else 1.0)
-        
+        monthly_premium = (
+            (coverage_amount / 1000) * base_rate_per_1000 * (2.5 if is_smoker else 1.0)
+        )
+
         return {
             "success": True,
             "monthly_premium": round(monthly_premium, 2),
@@ -142,12 +145,14 @@ def check_eligibility(
     try:
         health_conditions = health_conditions or []
         coverage_amount = coverage_amount or settings.tool_default_coverage
-        
+
         criteria_query = "life insurance eligibility criteria risk assessment health conditions age requirements"
         criteria_result = search_knowledge_base(criteria_query, k=4)
-        
-        conditions_str = ", ".join(health_conditions) if health_conditions else "none reported"
-        
+
+        conditions_str = (
+            ", ".join(health_conditions) if health_conditions else "none reported"
+        )
+
         prompt = f"""As a life insurance underwriting expert, assess the eligibility for this applicant.
 
 Eligibility Criteria from Knowledge Base:
@@ -170,13 +175,14 @@ Provide your assessment in JSON format:
 }}"""
 
         response = llm_service.invoke([{"role": "user", "content": prompt}])
-        
+
         import json
         import re
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+
+        json_match = re.search(r"\{.*\}", response, re.DOTALL)
         if json_match:
             assessment = json.loads(json_match.group())
-            
+
             return {
                 "success": True,
                 "eligibility": assessment.get("eligibility", "Moderate"),
@@ -191,13 +197,15 @@ Provide your assessment in JSON format:
                     "Review different policy types for your situation",
                 ],
             }
-        
+
         return {
             "success": True,
             "eligibility": "Moderate",
             "likely_approved": True,
             "issues": [],
-            "recommendations": ["Consult with an insurance agent for detailed assessment"],
+            "recommendations": [
+                "Consult with an insurance agent for detailed assessment"
+            ],
             "suggested_actions": [
                 "Get quotes from multiple insurers",
                 "Prepare medical records and documentation",

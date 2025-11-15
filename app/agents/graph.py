@@ -16,7 +16,14 @@ from app.services.memory import memory_service
 
 logger = logging.getLogger(__name__)
 
-VALID_INTENTS = ["POLICY_TYPES", "ELIGIBILITY", "CLAIMS", "PREMIUMS", "COVERAGE", "GENERAL"]
+VALID_INTENTS = [
+    "POLICY_TYPES",
+    "ELIGIBILITY",
+    "CLAIMS",
+    "PREMIUMS",
+    "COVERAGE",
+    "GENERAL",
+]
 
 
 class AgentState(TypedDict):
@@ -89,7 +96,7 @@ class LifeInsuranceAgent:
 
         try:
             search_queries = [question]
-            
+
             intent_queries = {
                 "POLICY_TYPES": "types of life insurance policies",
                 "ELIGIBILITY": "life insurance eligibility requirements",
@@ -97,7 +104,7 @@ class LifeInsuranceAgent:
                 "PREMIUMS": "life insurance premium costs",
                 "COVERAGE": "life insurance coverage amounts",
             }
-            
+
             if intent in intent_queries:
                 search_queries.append(intent_queries[intent])
 
@@ -149,15 +156,30 @@ class LifeInsuranceAgent:
     def _should_use_tools(self, state: AgentState) -> str:
         question = state["question"].lower()
         intent = state.get("intent", "GENERAL")
-        
-        calculate_keywords = ["calculate", "estimate", "cost", "price", "premium", "how much"]
-        eligibility_keywords = ["eligible", "qualify", "can i get", "approved", "health"]
+
+        calculate_keywords = [
+            "calculate",
+            "estimate",
+            "cost",
+            "price",
+            "premium",
+            "how much",
+        ]
+        eligibility_keywords = [
+            "eligible",
+            "qualify",
+            "can i get",
+            "approved",
+            "health",
+        ]
         compare_keywords = ["compare", "difference", "versus", "vs", "better"]
 
         if intent == "PREMIUMS" or any(kw in question for kw in calculate_keywords):
             return "use_tools"
 
-        if intent == "ELIGIBILITY" or any(kw in question for kw in eligibility_keywords):
+        if intent == "ELIGIBILITY" or any(
+            kw in question for kw in eligibility_keywords
+        ):
             return "use_tools"
 
         if any(kw in question for kw in compare_keywords):
@@ -198,21 +220,32 @@ class LifeInsuranceAgent:
                     question, context="age", default=settings.tool_default_age
                 )
                 smoker = "smok" in question
-                
-                occupation_match = re.search(r'(?:work in|occupation|job)(?:\s+(?:is|as))?\s+(\w+)', question)
-                occupation = occupation_match.group(1) if occupation_match else "standard"
+
+                occupation_match = re.search(
+                    r"(?:work in|occupation|job)(?:\s+(?:is|as))?\s+(\w+)", question
+                )
+                occupation = (
+                    occupation_match.group(1) if occupation_match else "standard"
+                )
 
                 health_conditions = []
-                common_terms = ["diabetes", "high blood pressure", "cholesterol", "cancer", "heart disease", "asthma"]
+                common_terms = [
+                    "diabetes",
+                    "high blood pressure",
+                    "cholesterol",
+                    "cancer",
+                    "heart disease",
+                    "asthma",
+                ]
                 for term in common_terms:
                     if term in question:
                         health_conditions.append(term)
 
                 result = check_eligibility(
-                    age=age, 
-                    health_conditions=health_conditions, 
+                    age=age,
+                    health_conditions=health_conditions,
                     smoker=smoker,
-                    occupation=occupation
+                    occupation=occupation,
                 )
                 tool_results["eligibility"] = result
                 logger.info("Eligibility check completed")
@@ -243,7 +276,7 @@ class LifeInsuranceAgent:
             "coverage": [r"\$?(\d+)k", r"\$?(\d+),?\d*,?\d*\s*coverage", r"\$(\d+)"],
             "term": [r"(\d+)\s*year.*term", r"(\d+)-year"],
         }
-        
+
         patterns = pattern_map.get(context)
         if not patterns:
             return default

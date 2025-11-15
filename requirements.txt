@@ -17,11 +17,14 @@ sqlalchemy
 rich
 httpx
 tiktoken
+tenacity
 
 # API documentation
 scalar-fastapi
 
 # testing
 pytest
+pytest-asyncio
+pytest-cov
 black
 isort
