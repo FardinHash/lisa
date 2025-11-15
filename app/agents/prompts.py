@@ -60,24 +60,6 @@ Instructions:
 Your answer:"""
 
 
-CLARIFICATION_PROMPT = """The user's question may need clarification or additional context to provide the best answer.
-
-User Question: {question}
-
-Current Context:
-{context}
-
-Analyze if the question is:
-1. Clear and can be answered directly
-2. Needs clarification or more details
-3. Too broad and needs to be narrowed down
-
-If clarification is needed, respond with a helpful question to gather more information.
-If the question is clear, respond with "CLEAR".
-
-Response:"""
-
-
 PREMIUM_CALCULATOR_PROMPT = """Based on the user's information, provide an estimated premium range for life insurance.
 
 User Information:

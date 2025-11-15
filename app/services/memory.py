@@ -12,8 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 class MemoryBackend(ABC):
-    @abstractmethod
+    def __init__(self, max_history: int):
+        self.max_history = max_history
+
     def create_session(self, user_id: Optional[str] = None) -> str:
+        session_id = str(uuid.uuid4())
+        self._create_session_internal(session_id, user_id)
+        logger.info(f"Created new session: {session_id}")
+        return session_id
+
+    @abstractmethod
+    def _create_session_internal(self, session_id: str, user_id: Optional[str]) -> None:
         pass
 
     @abstractmethod
@@ -51,12 +60,11 @@ class MemoryBackend(ABC):
 
 class InMemoryBackend(MemoryBackend):
     def __init__(self, max_history: int):
+        super().__init__(max_history)
         self.sessions: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
         self.session_metadata: Dict[str, Dict[str, Any]] = {}
-        self.max_history = max_history
 
-    def create_session(self, user_id: Optional[str] = None) -> str:
-        session_id = str(uuid.uuid4())
+    def _create_session_internal(self, session_id: str, user_id: Optional[str]) -> None:
         self.sessions[session_id] = []
         self.session_metadata[session_id] = {
             "created_at": datetime.utcnow(),
@@ -64,8 +72,6 @@ class InMemoryBackend(MemoryBackend):
             "user_id": user_id,
             "message_count": 0,
         }
-        logger.info(f"Created new session: {session_id}")
-        return session_id
 
     def add_message(
         self,
@@ -133,16 +139,15 @@ class InMemoryBackend(MemoryBackend):
 
 class DatabaseBackend(MemoryBackend):
     def __init__(self, max_history: int):
+        super().__init__(max_history)
         from app.database import MessageModel, SessionLocal, SessionModel, init_db
 
-        self.max_history = max_history
         self.SessionLocal = SessionLocal
         self.SessionModel = SessionModel
         self.MessageModel = MessageModel
         init_db()
 
-    def create_session(self, user_id: Optional[str] = None) -> str:
-        session_id = str(uuid.uuid4())
+    def _create_session_internal(self, session_id: str, user_id: Optional[str]) -> None:
         db = self.SessionLocal()
         try:
             session = self.SessionModel(
@@ -154,8 +159,6 @@ class DatabaseBackend(MemoryBackend):
             )
             db.add(session)
             db.commit()
-            logger.info(f"Created new session: {session_id}")
-            return session_id
         finally:
             db.close()
 

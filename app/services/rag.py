@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 import warnings
 from typing import Any, Dict, List, Optional
 
@@ -8,7 +9,9 @@ from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import settings
+from app.services.cache import cache_service
 from app.services.llm import llm_service
+from app.services.monitoring import monitoring_service
 
 warnings.filterwarnings("ignore", message=".*Relevance scores must be between.*")
 
@@ -79,9 +82,16 @@ class RAGService:
     ) -> List[Dict[str, Any]]:
         k = k or settings.rag_search_k
         score_threshold = score_threshold or settings.rag_score_threshold
+
+        cached_result = cache_service.get_rag_result(query, k)
+        if cached_result:
+            return cached_result
+
         if not self.vectorstore:
             logger.error("Vector store not initialized")
             return []
+
+        start_time = time.time()
 
         try:
             docs_with_scores = self.vectorstore.similarity_search_with_relevance_scores(
@@ -99,11 +109,17 @@ class RAGService:
                         }
                     )
 
+            duration = time.time() - start_time
+            monitoring_service.record_rag_search(len(query), len(results), duration)
+
+            cache_service.set_rag_result(query, k, results)
+
             logger.info(f"Found {len(results)} relevant documents for query")
             return results
 
         except Exception as e:
             logger.error(f"Error searching vector store: {str(e)}")
+            monitoring_service.record_error("rag_search_error", str(e))
             return []
 
     def search_with_metadata_filter(
@@ -147,6 +163,21 @@ class RAGService:
             context_parts.append(f"[Source {idx}: {source}]\n{result['content']}\n")
 
         return "\n".join(context_parts)
+
+    def reload_knowledge_base(self) -> int:
+        logger.info("Reloading knowledge base...")
+
+        try:
+            cache_service.invalidate("rag")
+
+            num_chunks = self.load_and_index_documents()
+
+            logger.info(f"Knowledge base reloaded with {num_chunks} chunks")
+            return num_chunks
+
+        except Exception as e:
+            logger.error(f"Error reloading knowledge base: {str(e)}")
+            raise
 
 
 rag_service = RAGService()

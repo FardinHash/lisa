@@ -1,12 +1,37 @@
 import logging
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from app.config import settings
 from app.services.llm import llm_service
 from app.services.rag import rag_service
 
 logger = logging.getLogger(__name__)
+
+
+class ValidationError(Exception):
+    pass
+
+
+def validate_age(age: int) -> None:
+    if not settings.tool_age_min <= age <= settings.tool_age_max:
+        raise ValidationError(
+            f"Age must be between {settings.tool_age_min} and {settings.tool_age_max}"
+        )
+
+
+def validate_coverage(coverage: int) -> None:
+    if not settings.tool_coverage_min <= coverage <= settings.tool_coverage_max:
+        raise ValidationError(
+            f"Coverage must be between ${settings.tool_coverage_min:,} and ${settings.tool_coverage_max:,}"
+        )
+
+
+def validate_term(term: int) -> None:
+    if not settings.tool_term_min <= term <= settings.tool_term_max:
+        raise ValidationError(
+            f"Term must be between {settings.tool_term_min} and {settings.tool_term_max} years"
+        )
 
 
 def search_knowledge_base(query: str, k: int = 4) -> Dict[str, Any]:
@@ -57,6 +82,10 @@ def calculate_premium_estimate(
     Calculate estimated life insurance premium using AI-powered analysis of rating criteria.
     """
     try:
+        validate_age(age)
+        validate_coverage(coverage_amount)
+        validate_term(term_length)
+
         criteria_query = f"life insurance premium rating factors age {age} term {term_length} years smoker {is_smoker}"
         criteria_result = search_knowledge_base(criteria_query, k=2)
 
@@ -72,8 +101,6 @@ Applicant Profile:
 - Smoker: {'Yes' if is_smoker else 'No'}
 - Health Rating: {health_rating}
 
-Base Rate: ${settings.premium_base_rate} per $1,000 of coverage per month
-
 Provide your analysis and calculation. Include:
 1. Monthly premium estimate
 2. Annual premium (monthly × 12)
@@ -86,8 +113,6 @@ For example: "Monthly Premium = (Coverage / 1,000) × Base Rate = (500,000 / 1,0
 Format your response clearly and professionally."""
 
         response = llm_service.invoke([{"role": "user", "content": prompt}])
-
-        import re
 
         monthly_match = re.search(
             r"\$?(\d+[.,]?\d*)\s*(?:per month|monthly)", response, re.IGNORECASE
@@ -126,6 +151,9 @@ Format your response clearly and professionally."""
             "note": "This is an AI-generated estimate based on industry standards. Actual premiums may vary.",
         }
 
+    except ValidationError as e:
+        logger.warning(f"Validation error in premium calculation: {str(e)}")
+        return {"success": False, "error": str(e), "validation_error": True}
     except Exception as e:
         logger.error(f"Error calculating premium: {str(e)}")
         return {"success": False, "error": str(e)}
@@ -133,7 +161,7 @@ Format your response clearly and professionally."""
 
 def check_eligibility(
     age: int,
-    health_conditions: list = None,
+    health_conditions: List[str] = None,
     smoker: bool = False,
     occupation: str = "standard",
     coverage_amount: int = None,
@@ -142,8 +170,11 @@ def check_eligibility(
     Check life insurance eligibility using AI-powered underwriting analysis.
     """
     try:
+        validate_age(age)
+
         health_conditions = health_conditions or []
         coverage_amount = coverage_amount or settings.tool_default_coverage
+        validate_coverage(coverage_amount)
 
         criteria_query = "life insurance eligibility underwriting criteria risk assessment health conditions"
         criteria_result = search_knowledge_base(criteria_query, k=2)
@@ -237,6 +268,9 @@ Be specific and actionable in your response."""
             ],
         }
 
+    except ValidationError as e:
+        logger.warning(f"Validation error in eligibility check: {str(e)}")
+        return {"success": False, "error": str(e), "validation_error": True}
     except Exception as e:
         logger.error(f"Error checking eligibility: {str(e)}")
         return {"success": False, "error": str(e)}

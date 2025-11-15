@@ -128,16 +128,21 @@ class TestRAGService:
         assert "test.txt" in context
         assert "[Source 1:" in context
 
+    @patch("app.services.rag.cache_service")
     @patch("app.services.rag.Chroma")
     @patch("app.services.rag.os.path.exists")
-    def test_get_relevant_context_no_results(self, mock_exists, mock_chroma):
+    def test_get_relevant_context_no_results(
+        self, mock_exists, mock_chroma, mock_cache
+    ):
         mock_exists.return_value = True
         mock_vectorstore = MagicMock()
         mock_vectorstore.similarity_search_with_relevance_scores.return_value = []
         mock_chroma.return_value = mock_vectorstore
 
+        mock_cache.get_rag_result.return_value = None
+
         service = RAGService()
-        context = service.get_relevant_context("test query", k=2)
+        context = service.get_relevant_context("test query no results unique", k=2)
 
         assert "No relevant information found" in context
 
