@@ -47,8 +47,10 @@ async def send_message(request: ChatRequest):
     """
     try:
         if not memory_service.session_exists(request.session_id):
-            logger.warning(f"Session {request.session_id} not found, creating new one")
-            memory_service.create_session()
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session {request.session_id} not found. Please create a session first.",
+            )
 
         memory_service.add_message(
             session_id=request.session_id,

@@ -1,6 +1,7 @@
 import pytest
 
 from app.agents.graph import LifeInsuranceAgent
+from app.agents.services import ToolExecutor
 from app.services.memory import ConversationMemory
 
 
@@ -65,30 +66,30 @@ class TestAgentGraph:
         assert result == "generate_answer"
 
     def test_extract_number_age(self):
-        agent = LifeInsuranceAgent()
+        tool_executor = ToolExecutor()
 
-        age = agent._extract_number("I am 35 years old", "age", 30)
+        age = tool_executor._extract_number("I am 35 years old", "age", 30)
         assert age == 35
 
-        age = agent._extract_number("age 42", "age", 30)
+        age = tool_executor._extract_number("age 42", "age", 30)
         assert age == 42
 
     def test_extract_number_coverage(self):
-        agent = LifeInsuranceAgent()
+        tool_executor = ToolExecutor()
 
-        coverage = agent._extract_number("$500k coverage", "coverage", 250000)
+        coverage = tool_executor._extract_number("$500k coverage", "coverage", 250000)
         assert coverage == 500000
 
-        coverage = agent._extract_number("$1000k coverage", "coverage", 250000)
+        coverage = tool_executor._extract_number("$1000k coverage", "coverage", 250000)
         assert coverage == 1000000
 
-        coverage = agent._extract_number("$250000 coverage", "coverage", 100000)
+        coverage = tool_executor._extract_number("$250000 coverage", "coverage", 100000)
         assert coverage == 250000
 
     def test_extract_number_default(self):
-        agent = LifeInsuranceAgent()
+        tool_executor = ToolExecutor()
 
-        age = agent._extract_number("no age mentioned", "age", 30)
+        age = tool_executor._extract_number("no age mentioned", "age", 30)
         assert age == 30
 
     def test_process_message_success(self, mock_llm_response, mock_rag_service):

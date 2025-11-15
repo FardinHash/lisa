@@ -64,5 +64,30 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_phone_number: str = ""
 
+    intent_classification_temperature: float = 0.3
+    tool_selection_temperature: float = 0.2
+
+    tool_age_min: int = 18
+    tool_age_max: int = 85
+    tool_coverage_min: int = 10000
+    tool_coverage_max: int = 10000000
+    tool_term_min: int = 5
+    tool_term_max: int = 40
+
+    cache_enabled: bool = True
+    cache_ttl: int = 3600
+    cache_max_size: int = 1000
+
+    rate_limit_enabled: bool = True
+    rate_limit_calls: int = 100
+    rate_limit_period: int = 60
+
+    streaming_enabled: bool = True
+    streaming_chunk_size: int = 50
+
+    db_pool_size: int = 10
+    db_max_overflow: int = 20
+    db_pool_timeout: int = 30
+    db_pool_recycle: int = 3600
 
 settings = Settings()

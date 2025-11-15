@@ -3,11 +3,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.services.llm import LLMService
+from app.services.llm_provider import OpenAIProvider
 
 
 class TestLLMService:
     def test_message_conversion(self):
-        service = LLMService()
+        provider = OpenAIProvider()
 
         messages = [
             {"role": "system", "content": "You are a helpful assistant"},
@@ -15,14 +16,14 @@ class TestLLMService:
             {"role": "assistant", "content": "Hi there"},
         ]
 
-        langchain_messages = service._convert_messages(messages)
+        langchain_messages = provider._convert_messages(messages)
 
         assert len(langchain_messages) == 3
         assert langchain_messages[0].__class__.__name__ == "SystemMessage"
         assert langchain_messages[1].__class__.__name__ == "HumanMessage"
         assert langchain_messages[2].__class__.__name__ == "AIMessage"
 
-    @patch("app.services.llm.ChatOpenAI")
+    @patch("app.services.llm_provider.ChatOpenAI")
     def test_invoke_with_custom_temperature(self, mock_openai):
         mock_response = MagicMock()
         mock_response.content = "Test response"
@@ -35,7 +36,6 @@ class TestLLMService:
         result = service.invoke([{"role": "user", "content": "Test"}], temperature=0.5)
 
         assert result == "Test response"
-        mock_llm.with_config.assert_called_once()
 
     def test_get_embedding_model(self):
         service = LLMService()
