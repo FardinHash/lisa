@@ -53,6 +53,8 @@ Instructions:
 - Use proper markdown formatting with headers (## for main sections, ### for subsections)
 - Add blank lines between sections for better readability
 - Use **bold** for emphasis on important terms
+- DO NOT use LaTeX or mathematical notation - use plain text for formulas (e.g., "Monthly = (Coverage / 1000) × Rate")
+- For calculations, show them in simple text format
 - Maintain a friendly and professional tone
 - If appropriate, ask follow-up questions to better understand the user's needs
 

@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Any, Dict, Optional
 
 from app.config import settings
@@ -53,70 +54,60 @@ def calculate_premium_estimate(
     health_rating: str = "standard",
 ) -> Dict[str, Any]:
     """
-    Calculate estimated life insurance premium using knowledge base criteria.
+    Calculate estimated life insurance premium using AI-powered analysis of rating criteria.
     """
     try:
-        criteria_query = f"premium rating factors for age {age}, term {term_length} years, health rating {health_rating}, smoker status {is_smoker}"
-        criteria_result = search_knowledge_base(criteria_query, k=3)
+        criteria_query = f"life insurance premium rating factors age {age} term {term_length} years smoker {is_smoker}"
+        criteria_result = search_knowledge_base(criteria_query, k=2)
+        
+        prompt = f"""You are a life insurance actuarial expert. Based on the rating criteria below, provide a premium estimate.
 
-        prompt = f"""Based on the following life insurance rating criteria, calculate an estimated premium.
+Rating Criteria from Knowledge Base:
+{criteria_result.get('context', 'Use industry standard rating factors')}
 
-Premium Rating Criteria:
-{criteria_result.get('context', '')}
-
-Calculate for:
+Applicant Profile:
 - Age: {age} years
 - Coverage Amount: ${coverage_amount:,}
 - Term Length: {term_length} years
 - Smoker: {'Yes' if is_smoker else 'No'}
 - Health Rating: {health_rating}
 
-Use a base rate of ${settings.premium_base_rate} per $1,000 of coverage per month.
-Apply the rating factors from the criteria above.
+Base Rate: ${settings.premium_base_rate} per $1,000 of coverage per month
 
-Provide the calculation in this JSON format:
-{{
-    "monthly_premium": <calculated amount>,
-    "annual_premium": <monthly * 12>,
-    "total_term_cost": <annual * term_length>,
-    "explanation": "<brief explanation of factors applied>"
-}}"""
+Provide your analysis and calculation. Include:
+1. Monthly premium estimate
+2. Annual premium (monthly × 12)
+3. Total term cost (annual × {term_length})
+4. Brief explanation of factors applied
+
+IMPORTANT: Use plain text for calculations, NOT LaTeX or mathematical notation.
+For example: "Monthly Premium = (Coverage / 1,000) × Base Rate = (500,000 / 1,000) × 0.05 = $25"
+
+Format your response clearly and professionally."""
 
         response = llm_service.invoke([{"role": "user", "content": prompt}])
-
-        import json
+        
         import re
-
-        json_match = re.search(r"\{.*\}", response, re.DOTALL)
-        if json_match:
-            calculation = json.loads(json_match.group())
-
-            return {
-                "success": True,
-                "monthly_premium": round(calculation.get("monthly_premium", 0), 2),
-                "annual_premium": round(calculation.get("annual_premium", 0), 2),
-                "total_term_cost": round(calculation.get("total_term_cost", 0), 2),
-                "factors": {
-                    "age": age,
-                    "coverage_amount": f"${coverage_amount:,}",
-                    "term_length": f"{term_length} years",
-                    "smoker_status": "Smoker" if is_smoker else "Non-smoker",
-                    "health_rating": health_rating,
-                },
-                "explanation": calculation.get("explanation", ""),
-                "note": "This is an estimate based on industry standards. Actual premiums may vary.",
-            }
-
-        base_rate_per_1000 = settings.premium_base_rate
-        monthly_premium = (
-            (coverage_amount / 1000) * base_rate_per_1000 * (2.5 if is_smoker else 1.0)
-        )
-
+        monthly_match = re.search(r'\$?(\d+[.,]?\d*)\s*(?:per month|monthly)', response, re.IGNORECASE)
+        annual_match = re.search(r'\$?(\d+[.,]?\d*)\s*(?:per year|annual|yearly)', response, re.IGNORECASE)
+        
+        if monthly_match:
+            monthly_premium = float(monthly_match.group(1).replace(',', ''))
+            annual_premium = monthly_premium * 12
+            total_term_cost = annual_premium * term_length
+        else:
+            base_rate = settings.premium_base_rate
+            age_factor = 1.0 + ((age - 30) * 0.015) if age >= 30 else 0.85
+            smoker_factor = settings.premium_smoker_multiplier if is_smoker else 1.0
+            monthly_premium = (coverage_amount / 1000) * base_rate * age_factor * smoker_factor
+            annual_premium = monthly_premium * 12
+            total_term_cost = annual_premium * term_length
+        
         return {
             "success": True,
             "monthly_premium": round(monthly_premium, 2),
-            "annual_premium": round(monthly_premium * 12, 2),
-            "total_term_cost": round(monthly_premium * 12 * term_length, 2),
+            "annual_premium": round(annual_premium, 2),
+            "total_term_cost": round(total_term_cost, 2),
             "factors": {
                 "age": age,
                 "coverage_amount": f"${coverage_amount:,}",
@@ -124,7 +115,8 @@ Provide the calculation in this JSON format:
                 "smoker_status": "Smoker" if is_smoker else "Non-smoker",
                 "health_rating": health_rating,
             },
-            "note": "This is a basic estimate. Actual premiums may vary based on detailed underwriting.",
+            "explanation": response,
+            "note": "This is an AI-generated estimate based on industry standards. Actual premiums may vary.",
         }
 
     except Exception as e:
@@ -140,23 +132,21 @@ def check_eligibility(
     coverage_amount: int = None,
 ) -> Dict[str, Any]:
     """
-    Check life insurance eligibility using LLM reasoning on knowledge base criteria.
+    Check life insurance eligibility using AI-powered underwriting analysis.
     """
     try:
         health_conditions = health_conditions or []
         coverage_amount = coverage_amount or settings.tool_default_coverage
+        
+        criteria_query = "life insurance eligibility underwriting criteria risk assessment health conditions"
+        criteria_result = search_knowledge_base(criteria_query, k=2)
+        
+        conditions_str = ", ".join(health_conditions) if health_conditions else "none reported"
+        
+        prompt = f"""You are an experienced life insurance underwriting expert. Assess the eligibility for this applicant based on the criteria below.
 
-        criteria_query = "life insurance eligibility criteria risk assessment health conditions age requirements"
-        criteria_result = search_knowledge_base(criteria_query, k=4)
-
-        conditions_str = (
-            ", ".join(health_conditions) if health_conditions else "none reported"
-        )
-
-        prompt = f"""As a life insurance underwriting expert, assess the eligibility for this applicant.
-
-Eligibility Criteria from Knowledge Base:
-{criteria_result.get('context', '')}
+Underwriting Criteria from Knowledge Base:
+{criteria_result.get('context', 'Use standard underwriting guidelines')}
 
 Applicant Profile:
 - Age: {age} years
@@ -165,50 +155,56 @@ Applicant Profile:
 - Occupation: {occupation}
 - Desired Coverage: ${coverage_amount:,}
 
-Provide your assessment in JSON format:
-{{
-    "eligibility": "<Good/Moderate/Challenging>",
-    "likely_approved": <true/false>,
-    "issues": ["<list any concerns>"],
-    "recommendations": ["<list recommendations>"],
-    "reasoning": "<explain your assessment>"
-}}"""
+Provide a comprehensive assessment including:
+1. Overall eligibility status (Good/Moderate/Challenging)
+2. Likelihood of approval (likely/possible/challenging)
+3. Key issues or concerns
+4. Specific recommendations for this applicant
+5. Your professional reasoning
+
+IMPORTANT: Use plain text formatting only. NO LaTeX or mathematical notation.
+
+Be specific and actionable in your response."""
 
         response = llm_service.invoke([{"role": "user", "content": prompt}])
-
-        import json
-        import re
-
-        json_match = re.search(r"\{.*\}", response, re.DOTALL)
-        if json_match:
-            assessment = json.loads(json_match.group())
-
-            return {
-                "success": True,
-                "eligibility": assessment.get("eligibility", "Moderate"),
-                "likely_approved": assessment.get("likely_approved", True),
-                "issues": assessment.get("issues", []),
-                "recommendations": assessment.get("recommendations", []),
-                "reasoning": assessment.get("reasoning", ""),
-                "suggested_actions": [
-                    "Get quotes from multiple insurers",
-                    "Prepare medical records and documentation",
-                    "Consider working with an independent insurance broker",
-                    "Review different policy types for your situation",
-                ],
-            }
+        
+        response_lower = response.lower()
+        
+        if "good" in response_lower or "excellent" in response_lower:
+            eligibility_status = "Good"
+            likely_approved = True
+        elif "challenging" in response_lower or "difficult" in response_lower:
+            eligibility_status = "Challenging"
+            likely_approved = False
+        else:
+            eligibility_status = "Moderate"
+            likely_approved = True
+        
+        issues_section = re.search(r'(?:issues|concerns)[:\s]+(.*?)(?:\n\n|recommendations|$)', response, re.IGNORECASE | re.DOTALL)
+        recommendations_section = re.search(r'recommendations[:\s]+(.*?)(?:\n\n|reasoning|$)', response, re.IGNORECASE | re.DOTALL)
+        
+        issues = []
+        if issues_section:
+            issues_text = issues_section.group(1).strip()
+            issues = [line.strip('- ').strip() for line in issues_text.split('\n') if line.strip() and not line.strip().startswith('Recommendations')]
+        
+        recommendations = []
+        if recommendations_section:
+            rec_text = recommendations_section.group(1).strip()
+            recommendations = [line.strip('- ').strip() for line in rec_text.split('\n') if line.strip()]
 
         return {
             "success": True,
-            "eligibility": "Moderate",
-            "likely_approved": True,
-            "issues": [],
-            "recommendations": [
-                "Consult with an insurance agent for detailed assessment"
-            ],
+            "eligibility": eligibility_status,
+            "likely_approved": likely_approved,
+            "issues": issues if issues else ["See assessment details below"],
+            "recommendations": recommendations if recommendations else ["Consult with insurance broker for personalized guidance"],
+            "reasoning": response,
             "suggested_actions": [
                 "Get quotes from multiple insurers",
                 "Prepare medical records and documentation",
+                "Consider working with an independent insurance broker",
+                "Review different policy types for your situation",
             ],
         }
 
