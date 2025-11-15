@@ -161,4 +161,3 @@ class TestRAGService:
         assert len(results) == 1
         assert results[0]["content"] == "Filtered content"
         assert results[0]["metadata"]["type"] == "claims"
-

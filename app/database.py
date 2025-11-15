@@ -1,8 +1,15 @@
 from datetime import datetime
 from typing import Generator, Optional
 
-from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Text,
-                        create_engine)
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    create_engine,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 

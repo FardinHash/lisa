@@ -1,7 +1,10 @@
 import pytest
 
-from app.agents.tools import (calculate_premium_estimate, check_eligibility,
-                              get_policy_comparison)
+from app.agents.tools import (
+    calculate_premium_estimate,
+    check_eligibility,
+    get_policy_comparison,
+)
 
 
 class TestPremiumCalculator:

@@ -280,7 +280,7 @@ class LifeInsuranceCLI:
 
                 cleaned_input = user_input.strip().lstrip("/").lower()
                 known_commands = ["help", "clear", "history", "new", "quit", "exit"]
-                
+
                 if cleaned_input in known_commands:
                     should_continue = self.process_command(user_input)
                     if not should_continue:

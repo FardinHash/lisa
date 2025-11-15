@@ -59,7 +59,7 @@ def calculate_premium_estimate(
     try:
         criteria_query = f"life insurance premium rating factors age {age} term {term_length} years smoker {is_smoker}"
         criteria_result = search_knowledge_base(criteria_query, k=2)
-        
+
         prompt = f"""You are a life insurance actuarial expert. Based on the rating criteria below, provide a premium estimate.
 
 Rating Criteria from Knowledge Base:
@@ -86,23 +86,30 @@ For example: "Monthly Premium = (Coverage / 1,000) × Base Rate = (500,000 / 1,0
 Format your response clearly and professionally."""
 
         response = llm_service.invoke([{"role": "user", "content": prompt}])
-        
+
         import re
-        monthly_match = re.search(r'\$?(\d+[.,]?\d*)\s*(?:per month|monthly)', response, re.IGNORECASE)
-        annual_match = re.search(r'\$?(\d+[.,]?\d*)\s*(?:per year|annual|yearly)', response, re.IGNORECASE)
-        
+
+        monthly_match = re.search(
+            r"\$?(\d+[.,]?\d*)\s*(?:per month|monthly)", response, re.IGNORECASE
+        )
+        annual_match = re.search(
+            r"\$?(\d+[.,]?\d*)\s*(?:per year|annual|yearly)", response, re.IGNORECASE
+        )
+
         if monthly_match:
-            monthly_premium = float(monthly_match.group(1).replace(',', ''))
+            monthly_premium = float(monthly_match.group(1).replace(",", ""))
             annual_premium = monthly_premium * 12
             total_term_cost = annual_premium * term_length
         else:
             base_rate = settings.premium_base_rate
             age_factor = 1.0 + ((age - 30) * 0.015) if age >= 30 else 0.85
             smoker_factor = settings.premium_smoker_multiplier if is_smoker else 1.0
-            monthly_premium = (coverage_amount / 1000) * base_rate * age_factor * smoker_factor
+            monthly_premium = (
+                (coverage_amount / 1000) * base_rate * age_factor * smoker_factor
+            )
             annual_premium = monthly_premium * 12
             total_term_cost = annual_premium * term_length
-        
+
         return {
             "success": True,
             "monthly_premium": round(monthly_premium, 2),
@@ -137,12 +144,14 @@ def check_eligibility(
     try:
         health_conditions = health_conditions or []
         coverage_amount = coverage_amount or settings.tool_default_coverage
-        
+
         criteria_query = "life insurance eligibility underwriting criteria risk assessment health conditions"
         criteria_result = search_knowledge_base(criteria_query, k=2)
-        
-        conditions_str = ", ".join(health_conditions) if health_conditions else "none reported"
-        
+
+        conditions_str = (
+            ", ".join(health_conditions) if health_conditions else "none reported"
+        )
+
         prompt = f"""You are an experienced life insurance underwriting expert. Assess the eligibility for this applicant based on the criteria below.
 
 Underwriting Criteria from Knowledge Base:
@@ -167,9 +176,9 @@ IMPORTANT: Use plain text formatting only. NO LaTeX or mathematical notation.
 Be specific and actionable in your response."""
 
         response = llm_service.invoke([{"role": "user", "content": prompt}])
-        
+
         response_lower = response.lower()
-        
+
         if "good" in response_lower or "excellent" in response_lower:
             eligibility_status = "Good"
             likely_approved = True
@@ -179,26 +188,46 @@ Be specific and actionable in your response."""
         else:
             eligibility_status = "Moderate"
             likely_approved = True
-        
-        issues_section = re.search(r'(?:issues|concerns)[:\s]+(.*?)(?:\n\n|recommendations|$)', response, re.IGNORECASE | re.DOTALL)
-        recommendations_section = re.search(r'recommendations[:\s]+(.*?)(?:\n\n|reasoning|$)', response, re.IGNORECASE | re.DOTALL)
-        
+
+        issues_section = re.search(
+            r"(?:issues|concerns)[:\s]+(.*?)(?:\n\n|recommendations|$)",
+            response,
+            re.IGNORECASE | re.DOTALL,
+        )
+        recommendations_section = re.search(
+            r"recommendations[:\s]+(.*?)(?:\n\n|reasoning|$)",
+            response,
+            re.IGNORECASE | re.DOTALL,
+        )
+
         issues = []
         if issues_section:
             issues_text = issues_section.group(1).strip()
-            issues = [line.strip('- ').strip() for line in issues_text.split('\n') if line.strip() and not line.strip().startswith('Recommendations')]
-        
+            issues = [
+                line.strip("- ").strip()
+                for line in issues_text.split("\n")
+                if line.strip() and not line.strip().startswith("Recommendations")
+            ]
+
         recommendations = []
         if recommendations_section:
             rec_text = recommendations_section.group(1).strip()
-            recommendations = [line.strip('- ').strip() for line in rec_text.split('\n') if line.strip()]
+            recommendations = [
+                line.strip("- ").strip()
+                for line in rec_text.split("\n")
+                if line.strip()
+            ]
 
         return {
             "success": True,
             "eligibility": eligibility_status,
             "likely_approved": likely_approved,
             "issues": issues if issues else ["See assessment details below"],
-            "recommendations": recommendations if recommendations else ["Consult with insurance broker for personalized guidance"],
+            "recommendations": (
+                recommendations
+                if recommendations
+                else ["Consult with insurance broker for personalized guidance"]
+            ),
             "reasoning": response,
             "suggested_actions": [
                 "Get quotes from multiple insurers",

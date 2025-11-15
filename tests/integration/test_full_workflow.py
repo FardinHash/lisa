@@ -107,4 +107,3 @@ class TestFullWorkflow:
     def test_cors_headers(self):
         response = client.options("/api/v1/chat/session")
         assert response.status_code in [200, 405]
-

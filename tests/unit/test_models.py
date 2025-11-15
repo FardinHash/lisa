@@ -3,8 +3,14 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from app.models import (ChatRequest, ChatResponse, HealthResponse, MessageRole,
-                        SessionCreate, SessionResponse)
+from app.models import (
+    ChatRequest,
+    ChatResponse,
+    HealthResponse,
+    MessageRole,
+    SessionCreate,
+    SessionResponse,
+)
 
 
 class TestModels:
@@ -64,4 +70,3 @@ class TestModels:
         assert response.status == "healthy"
         assert response.environment == "local"
         assert response.timestamp is not None
-

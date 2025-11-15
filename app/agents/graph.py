@@ -6,10 +6,18 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
-from app.agents.prompts import (ANSWER_GENERATION_PROMPT, CLARIFICATION_PROMPT,
-                                INTENT_CLASSIFIER_PROMPT, SYSTEM_PROMPT)
-from app.agents.tools import (calculate_premium_estimate, check_eligibility,
-                              get_policy_comparison, search_knowledge_base)
+from app.agents.prompts import (
+    ANSWER_GENERATION_PROMPT,
+    CLARIFICATION_PROMPT,
+    INTENT_CLASSIFIER_PROMPT,
+    SYSTEM_PROMPT,
+)
+from app.agents.tools import (
+    calculate_premium_estimate,
+    check_eligibility,
+    get_policy_comparison,
+    search_knowledge_base,
+)
 from app.config import settings
 from app.services.llm import llm_service
 from app.services.memory import memory_service
@@ -71,7 +79,9 @@ class LifeInsuranceAgent:
 
         try:
             prompt = INTENT_CLASSIFIER_PROMPT.format(question=question)
-            intent = llm_service.invoke([{"role": "user", "content": prompt}], temperature=0.3)
+            intent = llm_service.invoke(
+                [{"role": "user", "content": prompt}], temperature=0.3
+            )
             intent = intent.strip().upper()
 
             if intent not in VALID_INTENTS:
@@ -94,7 +104,7 @@ class LifeInsuranceAgent:
 
         try:
             search_query = question
-            
+
             intent_keywords = {
                 "POLICY_TYPES": "policy types",
                 "ELIGIBILITY": "eligibility",
@@ -102,13 +112,17 @@ class LifeInsuranceAgent:
                 "PREMIUMS": "premiums",
                 "COVERAGE": "coverage",
             }
-            
+
             if intent in intent_keywords:
                 search_query = f"{question} {intent_keywords[intent]}"
 
             result = search_knowledge_base(search_query, k=settings.agent_search_k)
-            
-            state["context"] = result["context"] if result["success"] else "No specific information found."
+
+            state["context"] = (
+                result["context"]
+                if result["success"]
+                else "No specific information found."
+            )
             logger.info("Retrieved context successfully")
 
         except Exception as e:

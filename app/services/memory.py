@@ -133,8 +133,7 @@ class InMemoryBackend(MemoryBackend):
 
 class DatabaseBackend(MemoryBackend):
     def __init__(self, max_history: int):
-        from app.database import (MessageModel, SessionLocal, SessionModel,
-                                  init_db)
+        from app.database import MessageModel, SessionLocal, SessionModel, init_db
 
         self.max_history = max_history
         self.SessionLocal = SessionLocal

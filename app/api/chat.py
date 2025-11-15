@@ -4,8 +4,14 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
 
 from app.agents.graph import agent
-from app.models import (ChatRequest, ChatResponse, MessageRole, SessionCreate,
-                        SessionHistory, SessionResponse)
+from app.models import (
+    ChatRequest,
+    ChatResponse,
+    MessageRole,
+    SessionCreate,
+    SessionHistory,
+    SessionResponse,
+)
 from app.services.memory import memory_service
 
 logger = logging.getLogger(__name__)
