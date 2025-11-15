@@ -9,6 +9,7 @@ from scalar_fastapi import get_scalar_api_reference
 from scalar_fastapi.scalar_fastapi import Theme
 
 from app.api.chat import router as chat_router
+from app.api.voice import router as voice_router
 from app.config import settings
 from app.models import HealthResponse
 
@@ -37,6 +38,7 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(voice_router)
 
 
 @app.get("/", tags=["root"])
