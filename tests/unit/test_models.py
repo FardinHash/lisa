@@ -1,15 +1,10 @@
-import pytest
 from datetime import datetime
+
+import pytest
 from pydantic import ValidationError
 
-from app.models import (
-    ChatRequest,
-    ChatResponse,
-    SessionCreate,
-    SessionResponse,
-    MessageRole,
-    HealthResponse,
-)
+from app.models import (ChatRequest, ChatResponse, HealthResponse, MessageRole,
+                        SessionCreate, SessionResponse)
 
 
 class TestModels:
