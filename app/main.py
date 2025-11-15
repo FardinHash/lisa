@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Dict
+from typing import Any, Dict
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +10,10 @@ from scalar_fastapi.scalar_fastapi import Theme
 
 from app.api.chat import router as chat_router
 from app.config import settings
+from app.middleware import RateLimitMiddleware
 from app.models import HealthResponse
+from app.services.monitoring import monitoring_service
+from app.services.rag import rag_service
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper()),
@@ -35,6 +38,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(RateLimitMiddleware)
 
 app.include_router(chat_router)
 
@@ -63,6 +68,30 @@ async def health_check() -> HealthResponse:
     return HealthResponse(
         status="healthy", environment=settings.environment, timestamp=datetime.utcnow()
     )
+
+
+@app.get("/metrics", tags=["monitoring"])
+async def get_metrics() -> Dict[str, Any]:
+    return monitoring_service.get_metrics()
+
+
+@app.post("/admin/reload-knowledge-base", tags=["admin"])
+async def reload_knowledge_base() -> Dict[str, Any]:
+    try:
+        num_chunks = rag_service.reload_knowledge_base()
+        return {
+            "success": True,
+            "message": f"Knowledge base reloaded successfully with {num_chunks} chunks",
+            "chunks": num_chunks,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Error reloading knowledge base: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
 
 
 @app.on_event("startup")
