@@ -16,6 +16,8 @@ from app.services.memory import memory_service
 
 logger = logging.getLogger(__name__)
 
+VALID_INTENTS = ["POLICY_TYPES", "ELIGIBILITY", "CLAIMS", "PREMIUMS", "COVERAGE", "GENERAL"]
+
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
@@ -67,15 +69,7 @@ class LifeInsuranceAgent:
             intent = llm_service.invoke([{"role": "user", "content": prompt}])
             intent = intent.strip().upper()
 
-            valid_intents = [
-                "POLICY_TYPES",
-                "ELIGIBILITY",
-                "CLAIMS",
-                "PREMIUMS",
-                "COVERAGE",
-                "GENERAL",
-            ]
-            if intent not in valid_intents:
+            if intent not in VALID_INTENTS:
                 intent = "GENERAL"
 
             logger.info(f"Classified intent: {intent}")
@@ -95,17 +89,17 @@ class LifeInsuranceAgent:
 
         try:
             search_queries = [question]
-
-            if intent == "POLICY_TYPES":
-                search_queries.append("types of life insurance policies")
-            elif intent == "ELIGIBILITY":
-                search_queries.append("life insurance eligibility requirements")
-            elif intent == "CLAIMS":
-                search_queries.append("life insurance claims process")
-            elif intent == "PREMIUMS":
-                search_queries.append("life insurance premium costs")
-            elif intent == "COVERAGE":
-                search_queries.append("life insurance coverage amounts")
+            
+            intent_queries = {
+                "POLICY_TYPES": "types of life insurance policies",
+                "ELIGIBILITY": "life insurance eligibility requirements",
+                "CLAIMS": "life insurance claims process",
+                "PREMIUMS": "life insurance premium costs",
+                "COVERAGE": "life insurance coverage amounts",
+            }
+            
+            if intent in intent_queries:
+                search_queries.append(intent_queries[intent])
 
             all_context = []
             for query in search_queries[:2]:
@@ -155,31 +149,18 @@ class LifeInsuranceAgent:
     def _should_use_tools(self, state: AgentState) -> str:
         question = state["question"].lower()
         intent = state.get("intent", "GENERAL")
+        
+        calculate_keywords = ["calculate", "estimate", "cost", "price", "premium", "how much"]
+        eligibility_keywords = ["eligible", "qualify", "can i get", "approved", "health"]
+        compare_keywords = ["compare", "difference", "versus", "vs", "better"]
 
-        tool_keywords = {
-            "calculate": [
-                "calculate",
-                "estimate",
-                "cost",
-                "price",
-                "premium",
-                "how much",
-            ],
-            "eligibility": ["eligible", "qualify", "can i get", "approved", "health"],
-            "compare": ["compare", "difference", "versus", "vs", "better"],
-        }
-
-        if intent == "PREMIUMS" or any(
-            kw in question for kw in tool_keywords["calculate"]
-        ):
+        if intent == "PREMIUMS" or any(kw in question for kw in calculate_keywords):
             return "use_tools"
 
-        if intent == "ELIGIBILITY" or any(
-            kw in question for kw in tool_keywords["eligibility"]
-        ):
+        if intent == "ELIGIBILITY" or any(kw in question for kw in eligibility_keywords):
             return "use_tools"
 
-        if any(kw in question for kw in tool_keywords["compare"]):
+        if any(kw in question for kw in compare_keywords):
             return "use_tools"
 
         return "generate_answer"
@@ -217,30 +198,29 @@ class LifeInsuranceAgent:
                     question, context="age", default=settings.tool_default_age
                 )
                 smoker = "smok" in question
+                
+                occupation_match = re.search(r'(?:work in|occupation|job)(?:\s+(?:is|as))?\s+(\w+)', question)
+                occupation = occupation_match.group(1) if occupation_match else "standard"
 
                 health_conditions = []
-                common_conditions = [
-                    "diabetes",
-                    "high blood pressure",
-                    "cholesterol",
-                    "cancer",
-                    "heart disease",
-                    "asthma",
-                ]
-                for condition in common_conditions:
-                    if condition in question:
-                        health_conditions.append(condition)
+                common_terms = ["diabetes", "high blood pressure", "cholesterol", "cancer", "heart disease", "asthma"]
+                for term in common_terms:
+                    if term in question:
+                        health_conditions.append(term)
 
                 result = check_eligibility(
-                    age=age, health_conditions=health_conditions, smoker=smoker
+                    age=age, 
+                    health_conditions=health_conditions, 
+                    smoker=smoker,
+                    occupation=occupation
                 )
                 tool_results["eligibility"] = result
                 logger.info("Eligibility check completed")
 
             if "compare" in question:
                 policy_types = []
-                types = ["term", "whole", "universal", "variable"]
-                for ptype in types:
+                known_types = ["term", "whole", "universal", "variable"]
+                for ptype in known_types:
                     if ptype in question:
                         policy_types.append(ptype)
 
@@ -258,18 +238,14 @@ class LifeInsuranceAgent:
         return state
 
     def _extract_number(self, text: str, context: str, default: int) -> int:
-        if context == "age":
-            patterns = [
-                r"(\d+)\s*year",
-                r"age\s*(\d+)",
-                r"i'm\s*(\d+)",
-                r"i am\s*(\d+)",
-            ]
-        elif context == "coverage":
-            patterns = [r"\$?(\d+)k", r"\$?(\d+),?\d*,?\d*\s*coverage", r"\$(\d+)"]
-        elif context == "term":
-            patterns = [r"(\d+)\s*year.*term", r"(\d+)-year"]
-        else:
+        pattern_map = {
+            "age": [r"(\d+)\s*year", r"age\s*(\d+)", r"i'm\s*(\d+)", r"i am\s*(\d+)"],
+            "coverage": [r"\$?(\d+)k", r"\$?(\d+),?\d*,?\d*\s*coverage", r"\$(\d+)"],
+            "term": [r"(\d+)\s*year.*term", r"(\d+)-year"],
+        }
+        
+        patterns = pattern_map.get(context)
+        if not patterns:
             return default
 
         for pattern in patterns:
