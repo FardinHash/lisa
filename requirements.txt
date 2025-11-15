@@ -22,6 +22,9 @@ tenacity
 # API documentation
 scalar-fastapi
 
+# voice (optional)
+twilio
+
 # testing
 pytest
 pytest-asyncio

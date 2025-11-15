@@ -52,3 +52,44 @@ class HealthResponse(BaseModel):
     status: str
     environment: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class OutboundCallRequest(BaseModel):
+    to_number: str = Field(
+        ..., min_length=10, description="Phone number to call (E.164 format)"
+    )
+    initial_message: Optional[str] = Field(
+        None, description="Initial message the AI will say when call is answered"
+    )
+    context: Optional[Dict[str, Any]] = Field(
+        None, description="Additional context for the AI agent"
+    )
+
+
+class OutboundCallResponse(BaseModel):
+    call_sid: str
+    to: str
+    from_number: str = Field(..., alias="from")
+    status: str
+    message: str
+
+    class Config:
+        populate_by_name = True
+
+
+class CallStatusResponse(BaseModel):
+    call_sid: str
+    status: str
+    duration: Optional[str] = None
+    to: str
+    from_number: str = Field(..., alias="from")
+    direction: str
+
+    class Config:
+        populate_by_name = True
+
+
+class CallHangupResponse(BaseModel):
+    call_sid: str
+    status: str
+    message: str

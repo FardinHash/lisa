@@ -54,6 +54,16 @@ class Settings(BaseSettings):
     tool_default_coverage: int = 500000
     tool_default_term: int = 20
 
+    voice_enabled: bool = False
+    voice_stt_model: str = "whisper-1"
+    voice_tts_model: str = "tts-1"
+    voice_tts_voice: str = "nova"
+    voice_tts_speed: float = 1.0
+
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_phone_number: str = ""
+
     intent_classification_temperature: float = 0.3
     tool_selection_temperature: float = 0.2
 
@@ -79,6 +89,5 @@ class Settings(BaseSettings):
     db_max_overflow: int = 20
     db_pool_timeout: int = 30
     db_pool_recycle: int = 3600
-
 
 settings = Settings()
