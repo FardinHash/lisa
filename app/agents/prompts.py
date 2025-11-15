@@ -50,7 +50,6 @@ Instructions:
 - If the knowledge base doesn't contain enough information, use your general knowledge but indicate uncertainty
 - Keep your response clear, concise, and well-structured
 - Use bullet points or numbered lists for complex information
-- Use proper markdown formatting with headers (## for main sections, ### for subsections)
 - Add blank lines between sections for better readability
 - Use **bold** for emphasis on important terms
 - DO NOT use LaTeX or mathematical notation - use plain text for formulas (e.g., "Monthly = (Coverage / 1000) × Rate")
