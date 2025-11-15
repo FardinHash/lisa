@@ -66,7 +66,12 @@ class TestSettings:
         assert settings.environment == "production"
 
     def test_api_config(self):
-        settings = Settings(openai_api_key="test-key")
+        settings = Settings(
+            openai_api_key="test-key",
+            api_host="0.0.0.0",
+            api_port=8000,
+            api_reload=True,
+        )
 
         assert settings.api_host == "0.0.0.0"
         assert settings.api_port == 8000

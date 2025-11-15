@@ -84,7 +84,8 @@ class TestFullWorkflow:
             json={"session_id": "fake-session-id", "message": "Test message"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()
 
     def test_api_documentation_endpoints(self):
         response = client.get("/docs")
