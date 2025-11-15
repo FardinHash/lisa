@@ -101,11 +101,11 @@ class LifeInsuranceCLI:
         table.add_column("Command", style="cyan bold", no_wrap=True, width=20)
         table.add_column("Description", style="white")
 
-        table.add_row("/help", "Show this help message")
-        table.add_row("/clear", "Clear conversation history and start fresh")
-        table.add_row("/history", "Show full conversation history")
-        table.add_row("/new", "Start a new session")
-        table.add_row("/quit or /exit", "Exit the application")
+        table.add_row("help", "Show this help message")
+        table.add_row("clear", "Clear conversation history and start fresh")
+        table.add_row("history", "Show full conversation history")
+        table.add_row("new", "Start a new session")
+        table.add_row("quit or exit", "Exit the application")
 
         self.console.print()
         self.console.print(table)
@@ -217,9 +217,9 @@ class LifeInsuranceCLI:
             self.console.print("\n[yellow]⚠ No active session to clear[/yellow]\n")
 
     def process_command(self, user_input: str) -> bool:
-        command = user_input.lower().strip()
+        command = user_input.lower().strip().lstrip("/")
 
-        if command in ["/quit", "/exit"]:
+        if command in ["quit", "exit"]:
             self.console.print()
             goodbye_panel = Panel(
                 Align.center(
@@ -234,22 +234,22 @@ class LifeInsuranceCLI:
             self.console.print()
             return False
 
-        elif command == "/help":
+        elif command == "help":
             self.display_help()
 
-        elif command == "/clear":
+        elif command == "clear":
             self.clear_session()
 
-        elif command == "/history":
+        elif command == "history":
             self.display_history()
 
-        elif command == "/new":
+        elif command == "new":
             self.clear_session()
             self.console.print("[green]✓ New session started[/green]\n")
 
         else:
             self.console.print(f"\n[yellow]⚠ Unknown command: {command}[/yellow]")
-            self.console.print("[dim]Type /help for available commands[/dim]\n")
+            self.console.print("[dim]Type 'help' for available commands[/dim]\n")
 
         return True
 
@@ -260,9 +260,9 @@ class LifeInsuranceCLI:
         self.create_session()
 
         info_panel = Panel(
-            "[dim]💡 Type [bold]/help[/bold] for commands  |  "
+            "[dim]💡 Type [bold cyan]help[/bold cyan] for commands  |  "
             "Ask any question about life insurance  |  "
-            "[bold]/quit[/bold] to exit[/dim]",
+            "Type [bold cyan]quit[/bold cyan] to exit[/dim]",
             border_style="dim",
             box=box.SIMPLE,
         )
@@ -278,7 +278,10 @@ class LifeInsuranceCLI:
                 if not user_input.strip():
                     continue
 
-                if user_input.startswith("/"):
+                cleaned_input = user_input.strip().lstrip("/").lower()
+                known_commands = ["help", "clear", "history", "new", "quit", "exit"]
+                
+                if cleaned_input in known_commands:
                     should_continue = self.process_command(user_input)
                     if not should_continue:
                         break
@@ -313,7 +316,7 @@ class LifeInsuranceCLI:
 
             except KeyboardInterrupt:
                 self.console.print(
-                    "\n[yellow]⚠ Interrupted. Type /quit to exit properly.[/yellow]\n"
+                    "\n[yellow]⚠ Interrupted. Type 'quit' to exit properly.[/yellow]\n"
                 )
                 continue
 
