@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -25,6 +27,7 @@ class TestVoiceAPI:
     def test_websocket_voice_disabled(self):
         from starlette.websockets import WebSocketDisconnect
 
-        with pytest.raises(WebSocketDisconnect):
-            with client.websocket_connect("/api/v1/voice/stream") as websocket:
-                pass
+        with patch("app.api.voice.settings.voice_enabled", False):
+            with pytest.raises(WebSocketDisconnect):
+                with client.websocket_connect("/api/v1/voice/stream") as websocket:
+                    pass
