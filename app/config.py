@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     llm_model: str = "gpt-4o-mini"
     llm_temperature: float = 0.7
-    llm_max_tokens: int = 1000
+    llm_max_tokens: int = 800
 
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536
@@ -31,16 +31,16 @@ class Settings(BaseSettings):
 
     rag_chunk_size: int = 1000
     rag_chunk_overlap: int = 200
-    rag_search_k: int = 4
+    rag_search_k: int = 3
     rag_score_threshold: float = 0.5
     rag_file_encoding: str = "utf-8"
     rag_file_glob: str = "**/*.txt"
 
     memory_max_history: int = 10
-    memory_context_messages: int = 6
+    memory_context_messages: int = 4
 
-    agent_search_k: int = 3
-    agent_comparison_k: int = 6
+    agent_search_k: int = 2
+    agent_comparison_k: int = 4
 
     premium_base_rate: float = 0.05
     premium_smoker_multiplier: float = 2.5

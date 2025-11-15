@@ -46,17 +46,15 @@ class LifeInsuranceAgent:
 
         workflow.add_node("analyze_intent", self._analyze_intent)
         workflow.add_node("retrieve_information", self._retrieve_information)
-        workflow.add_node("check_clarification", self._check_clarification)
         workflow.add_node("use_tools", self._use_tools)
         workflow.add_node("generate_answer", self._generate_answer)
 
         workflow.set_entry_point("analyze_intent")
 
         workflow.add_edge("analyze_intent", "retrieve_information")
-        workflow.add_edge("retrieve_information", "check_clarification")
 
         workflow.add_conditional_edges(
-            "check_clarification",
+            "retrieve_information",
             self._should_use_tools,
             {"use_tools": "use_tools", "generate_answer": "generate_answer"},
         )
@@ -73,7 +71,7 @@ class LifeInsuranceAgent:
 
         try:
             prompt = INTENT_CLASSIFIER_PROMPT.format(question=question)
-            intent = llm_service.invoke([{"role": "user", "content": prompt}])
+            intent = llm_service.invoke([{"role": "user", "content": prompt}], temperature=0.3)
             intent = intent.strip().upper()
 
             if intent not in VALID_INTENTS:
@@ -95,61 +93,27 @@ class LifeInsuranceAgent:
         intent = state.get("intent", "GENERAL")
 
         try:
-            search_queries = [question]
-
-            intent_queries = {
-                "POLICY_TYPES": "types of life insurance policies",
-                "ELIGIBILITY": "life insurance eligibility requirements",
-                "CLAIMS": "life insurance claims process",
-                "PREMIUMS": "life insurance premium costs",
-                "COVERAGE": "life insurance coverage amounts",
+            search_query = question
+            
+            intent_keywords = {
+                "POLICY_TYPES": "policy types",
+                "ELIGIBILITY": "eligibility",
+                "CLAIMS": "claims",
+                "PREMIUMS": "premiums",
+                "COVERAGE": "coverage",
             }
+            
+            if intent in intent_keywords:
+                search_query = f"{question} {intent_keywords[intent]}"
 
-            if intent in intent_queries:
-                search_queries.append(intent_queries[intent])
-
-            all_context = []
-            for query in search_queries[:2]:
-                result = search_knowledge_base(query, k=settings.agent_search_k)
-                if result["success"]:
-                    all_context.append(result["context"])
-
-            state["context"] = (
-                "\n\n".join(all_context)
-                if all_context
-                else "No specific information found."
-            )
-            logger.info(f"Retrieved {len(all_context)} context sections")
+            result = search_knowledge_base(search_query, k=settings.agent_search_k)
+            
+            state["context"] = result["context"] if result["success"] else "No specific information found."
+            logger.info("Retrieved context successfully")
 
         except Exception as e:
             logger.error(f"Error retrieving information: {str(e)}")
             state["context"] = "Error retrieving information."
-
-        return state
-
-    def _check_clarification(self, state: AgentState) -> AgentState:
-        logger.info("Checking if clarification needed...")
-
-        question = state["question"]
-        context = state.get("context", "")
-
-        try:
-            prompt = CLARIFICATION_PROMPT.format(
-                question=question, context=context[:500]
-            )
-
-            response = llm_service.invoke([{"role": "user", "content": prompt}])
-
-            if "CLEAR" in response.upper():
-                state["needs_clarification"] = False
-                logger.info("Question is clear, proceeding...")
-            else:
-                state["needs_clarification"] = True
-                logger.info("Question may need clarification")
-
-        except Exception as e:
-            logger.error(f"Error checking clarification: {str(e)}")
-            state["needs_clarification"] = False
 
         return state
 
