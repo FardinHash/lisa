@@ -1,8 +1,10 @@
 import logging
 from datetime import datetime
+from typing import Dict
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from scalar_fastapi import get_scalar_api_reference
 from scalar_fastapi.scalar_fastapi import Theme
 
@@ -38,7 +40,7 @@ app.include_router(chat_router)
 
 
 @app.get("/", tags=["root"])
-async def root():
+async def root() -> Dict[str, str]:
     return {
         "message": "Life Insurance Support Assistant API",
         "version": "1.0.0",
@@ -47,9 +49,8 @@ async def root():
     }
 
 
-# API documentation
 @app.get("/docs", include_in_schema=False)
-async def scalar_html():
+async def scalar_html() -> HTMLResponse:
     return get_scalar_api_reference(
         openapi_url=app.openapi_url,
         title=app.title,
@@ -57,25 +58,22 @@ async def scalar_html():
     )
 
 
-# Health check
 @app.get("/health", response_model=HealthResponse, tags=["health"])
-async def health_check():
+async def health_check() -> HealthResponse:
     return HealthResponse(
         status="healthy", environment=settings.environment, timestamp=datetime.utcnow()
     )
 
 
-# Startup event
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     logger.info("Starting Life Insurance Support Assistant API")
     logger.info(f"Environment: {settings.environment}")
     logger.info(f"LLM Model: {settings.llm_model}")
 
 
-# Shutdown event
 @app.on_event("shutdown")
-async def shutdown_event():
+async def shutdown_event() -> None:
     logger.info("Shutting down Life Insurance Support Assistant API")
 
 

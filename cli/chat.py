@@ -6,6 +6,7 @@ sys.path.insert(0, str(project_root))
 
 import logging
 import time
+from typing import Dict
 
 from dotenv import load_dotenv
 from rich import box
@@ -28,11 +29,11 @@ console = Console()
 
 
 class LifeInsuranceCLI:
-    def __init__(self):
-        self.session_id = None
+    def __init__(self) -> None:
+        self.session_id: str | None = None
         self.console = Console()
 
-    def display_welcome(self):
+    def display_welcome(self) -> None:
         banner = """
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
@@ -89,7 +90,7 @@ class LifeInsuranceCLI:
         self.console.print(examples)
         self.console.print()
 
-    def display_help(self):
+    def display_help(self) -> None:
         table = Table(
             title="[bold cyan]Available Commands[/bold cyan]",
             box=box.ROUNDED,
@@ -110,7 +111,7 @@ class LifeInsuranceCLI:
         self.console.print(table)
         self.console.print()
 
-    def display_history(self):
+    def display_history(self) -> None:
         if not self.session_id:
             self.console.print("\n[yellow] No active session[/yellow]\n")
             return
@@ -161,7 +162,7 @@ class LifeInsuranceCLI:
         self.console.print(Rule(style="dim"))
         self.console.print()
 
-    def display_response(self, response: dict):
+    def display_response(self, response: Dict[str, any]) -> None:
         answer = response.get("answer", "No response generated")
         sources = response.get("sources", [])
         reasoning = response.get("agent_reasoning", "")
@@ -202,12 +203,12 @@ class LifeInsuranceCLI:
         self.console.print(Rule(style="dim"))
         self.console.print()
 
-    def create_session(self):
+    def create_session(self) -> None:
         self.session_id = memory_service.create_session()
         session_short = self.session_id[:8]
         self.console.print(f"[dim]✓ Session created: {session_short}...[/dim]\n")
 
-    def clear_session(self):
+    def clear_session(self) -> None:
         if self.session_id:
             memory_service.clear_session(self.session_id)
             self.console.print("\n[green]✓ Conversation history cleared[/green]")
@@ -252,7 +253,7 @@ class LifeInsuranceCLI:
 
         return True
 
-    def run(self):
+    def run(self) -> None:
         load_dotenv()
 
         self.display_welcome()
@@ -329,7 +330,7 @@ class LifeInsuranceCLI:
                 logging.error(f"CLI Error: {str(e)}", exc_info=True)
 
 
-def main():
+def main() -> None:
     cli = LifeInsuranceCLI()
     cli.run()
 

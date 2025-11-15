@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Optional
+from typing import Generator, Optional
 
 from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Text,
                         create_engine)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
 
@@ -38,11 +38,11 @@ engine = create_engine(settings.database_url, echo=settings.environment == "loca
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def init_db():
+def init_db() -> None:
     Base.metadata.create_all(bind=engine)
 
 
-def get_db():
+def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db

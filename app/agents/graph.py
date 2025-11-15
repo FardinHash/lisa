@@ -38,7 +38,7 @@ class AgentState(TypedDict):
 
 
 class LifeInsuranceAgent:
-    def __init__(self):
+    def __init__(self) -> None:
         self.graph = self._build_graph()
 
     def _build_graph(self) -> StateGraph:
