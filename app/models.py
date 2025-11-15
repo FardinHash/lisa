@@ -19,8 +19,8 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    session_id: str
-    message: str
+    session_id: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1)
 
 
 class ChatResponse(BaseModel):

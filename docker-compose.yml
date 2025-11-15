@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    environment:
+      - OPENAI_API_KEY
+      - ENVIRONMENT
+      - LOG_LEVEL
+      - LLM_MODEL
+      - LLM_TEMPERATURE
+      - LLM_MAX_TOKENS
+      - EMBEDDING_MODEL
+      - EMBEDDING_DIMENSIONS
+      - CHROMA_PERSIST_DIR
+      - KNOWLEDGE_BASE_DIR
+      - DATABASE_URL
+      - API_HOST
+      - API_PORT
+      - API_RELOAD
+    volumes:
+      - ./data:/app/data
+      - ./knowledge_base:/app/knowledge_base
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests, os; requests.get(f'http://localhost:{os.getenv(\"API_PORT\")}/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
